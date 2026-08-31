@@ -53,7 +53,8 @@ echo "Select your primary login method:"
 echo "1) Email (Default)"
 echo "2) Username"
 echo "3) Phone Number"
-read -p "Enter choice (1/2/3) [1]: " LOGIN_CHOICE
+echo "4) Preferred Username"
+read -p "Enter choice (1-4) [1]: " LOGIN_CHOICE
 
 case $LOGIN_CHOICE in
   2)
@@ -66,6 +67,11 @@ case $LOGIN_CHOICE in
     LOGIN_ICON="Icons.phone"
     LOGIN_KEYBOARD="TextInputType.phone"
     ;;
+  4)
+    LOGIN_LABEL="Preferred Username"
+    LOGIN_ICON="Icons.badge"
+    LOGIN_KEYBOARD="TextInputType.text"
+    ;;
   *)
     LOGIN_LABEL="Email"
     LOGIN_ICON="Icons.email"
@@ -74,7 +80,45 @@ case $LOGIN_CHOICE in
 esac
 
 echo ""
-read -p "Enter additional mandatory signup fields (comma separated, e.g. name,phone_number) []: " SIGNUP_FIELDS_INPUT
+echo "Select additional mandatory signup fields (comma separated numbers, e.g., 1,4,9):"
+echo " 1) address            7) locale              13) preferred_username"
+echo " 2) birthdate          8) middle_name         14) profile"
+echo " 3) email              9) name                15) updated_at"
+echo " 4) family_name       10) nickname            16) website"
+echo " 5) gender            11) phone_number        17) zoneinfo"
+echo " 6) given_name        12) picture             18) Custom Field..."
+read -p "Enter choices []: " SIGNUP_SELECTIONS
+
+SIGNUP_FIELDS_INPUT=""
+IFS=',' read -ra SEL_ADDR <<< "$SIGNUP_SELECTIONS"
+for SEL in "${SEL_ADDR[@]}"; do
+    SEL=$(echo "$SEL" | xargs)
+    case $SEL in
+        1) SIGNUP_FIELDS_INPUT="$SIGNUP_FIELDS_INPUT address," ;;
+        2) SIGNUP_FIELDS_INPUT="$SIGNUP_FIELDS_INPUT birthdate," ;;
+        3) SIGNUP_FIELDS_INPUT="$SIGNUP_FIELDS_INPUT email," ;;
+        4) SIGNUP_FIELDS_INPUT="$SIGNUP_FIELDS_INPUT family_name," ;;
+        5) SIGNUP_FIELDS_INPUT="$SIGNUP_FIELDS_INPUT gender," ;;
+        6) SIGNUP_FIELDS_INPUT="$SIGNUP_FIELDS_INPUT given_name," ;;
+        7) SIGNUP_FIELDS_INPUT="$SIGNUP_FIELDS_INPUT locale," ;;
+        8) SIGNUP_FIELDS_INPUT="$SIGNUP_FIELDS_INPUT middle_name," ;;
+        9) SIGNUP_FIELDS_INPUT="$SIGNUP_FIELDS_INPUT name," ;;
+       10) SIGNUP_FIELDS_INPUT="$SIGNUP_FIELDS_INPUT nickname," ;;
+       11) SIGNUP_FIELDS_INPUT="$SIGNUP_FIELDS_INPUT phone_number," ;;
+       12) SIGNUP_FIELDS_INPUT="$SIGNUP_FIELDS_INPUT picture," ;;
+       13) SIGNUP_FIELDS_INPUT="$SIGNUP_FIELDS_INPUT preferred_username," ;;
+       14) SIGNUP_FIELDS_INPUT="$SIGNUP_FIELDS_INPUT profile," ;;
+       15) SIGNUP_FIELDS_INPUT="$SIGNUP_FIELDS_INPUT updated_at," ;;
+       16) SIGNUP_FIELDS_INPUT="$SIGNUP_FIELDS_INPUT website," ;;
+       17) SIGNUP_FIELDS_INPUT="$SIGNUP_FIELDS_INPUT zoneinfo," ;;
+       18)
+          read -p "Enter exact name of custom field (e.g. custom:role): " CUSTOM_FLD
+          if [ -n "$CUSTOM_FLD" ]; then
+              SIGNUP_FIELDS_INPUT="$SIGNUP_FIELDS_INPUT $CUSTOM_FLD,"
+          fi
+          ;;
+    esac
+done
 
 echo "Adding Amplify dependencies..."
 flutter pub add amplify_flutter amplify_auth_cognito
@@ -149,9 +193,9 @@ done
 
 # Generate dynamic signup fields
 if [ -n "$SIGNUP_FIELDS_INPUT" ]; then
-    CONTROLLERS=""
-    UI_FIELDS=""
-    ATTRIBUTES_MAP="userAttributes: {"
+    > .tmp_controllers
+    > .tmp_ui_fields
+    echo "        userAttributes: {" > .tmp_attrs
     
     IFS=',' read -ra ADDR <<< "$SIGNUP_FIELDS_INPUT"
     for FIELD in "${ADDR[@]}"; do
@@ -161,17 +205,27 @@ if [ -n "$SIGNUP_FIELDS_INPUT" ]; then
         CTRL_NAME="_${FIELD}Controller"
         LABEL=$(echo "$FIELD" | tr '_' ' ' | awk '{for(i=1;i<=NF;i++)sub(/./,toupper(substr($i,1,1)),$i)}1')
         
-        CONTROLLERS="${CONTROLLERS}\n  final $CTRL_NAME = TextEditingController();"
+        echo "  final $CTRL_NAME = TextEditingController();" >> .tmp_controllers
         
-        UI_FIELDS="${UI_FIELDS}\n                  TextFormField(\n                    controller: $CTRL_NAME,\n                    decoration: InputDecoration(labelText: '$LABEL', border: const OutlineInputBorder()),\n                    validator: (v) => v!.isEmpty ? '$LABEL is required' : null,\n                  ),\n                  const SizedBox(height: 16),"
+        cat <<EOF >> .tmp_ui_fields
+                  TextFormField(
+                    controller: $CTRL_NAME,
+                    decoration: InputDecoration(labelText: '$LABEL', border: const OutlineInputBorder()),
+                    validator: (v) => v!.isEmpty ? '$LABEL is required' : null,
+                  ),
+                  const SizedBox(height: 16),
+EOF
         
-        ATTRIBUTES_MAP="${ATTRIBUTES_MAP}\n          CognitoUserAttributeKey.parse('$FIELD'): $CTRL_NAME.text.trim(),"
+        echo "          CognitoUserAttributeKey.parse('$FIELD'): $CTRL_NAME.text.trim()," >> .tmp_attrs
     done
-    ATTRIBUTES_MAP="${ATTRIBUTES_MAP}\n        }"
+    echo "        }" >> .tmp_attrs
 
-    sed -i "/final _passwordController/a $CONTROLLERS" lib/auth/signup_screen.dart
-    sed -i "/\/\/ __SIGNUP_FIELDS__/a $UI_FIELDS" lib/auth/signup_screen.dart
-    sed -i "s/\/\/ __SIGNUP_ATTRIBUTES__/$ATTRIBUTES_MAP/" lib/auth/signup_screen.dart
+    # Inject using sed
+    sed -i -e '/final _passwordController/r .tmp_controllers' lib/auth/signup_screen.dart
+    sed -i -e '/\/\/ __SIGNUP_FIELDS__/r .tmp_ui_fields' lib/auth/signup_screen.dart
+    sed -i -e '/\/\/ __SIGNUP_ATTRIBUTES__/{' -e 'r .tmp_attrs' -e 'd' -e '}' lib/auth/signup_screen.dart
+
+    rm -f .tmp_controllers .tmp_ui_fields .tmp_attrs
 else
     sed -i "s/\/\/ __SIGNUP_ATTRIBUTES__//" lib/auth/signup_screen.dart
     sed -i "s/\/\/ __SIGNUP_FIELDS__//" lib/auth/signup_screen.dart
