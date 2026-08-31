@@ -21,6 +21,7 @@ class AuthWrapper extends StatefulWidget {
 class _AuthWrapperState extends State<AuthWrapper> {
   bool _isAmplifyConfigured = false;
   bool _isAuthenticated = false;
+  String? _configErrorMessage;
 
   @override
   void initState() {
@@ -35,15 +36,28 @@ class _AuthWrapperState extends State<AuthWrapper> {
       await Amplify.configure(amplifyconfig);
       setState(() {
         _isAmplifyConfigured = true;
+        _configErrorMessage = null;
       });
       _checkAuthStatus();
-    } on Exception catch (e) {
-      safePrint('An error occurred configuring Amplify: $e');
-      // Already configured exceptions can safely be ignored on hot restart
+    } on AmplifyAlreadyConfiguredException {
+      safePrint('Amplify was already configured (hot restart).');
       setState(() {
         _isAmplifyConfigured = true;
+        _configErrorMessage = null;
       });
       _checkAuthStatus();
+    } on AmplifyException catch (e) {
+      safePrint('An error occurred configuring Amplify: $e');
+      setState(() {
+        _isAmplifyConfigured = true;
+        _configErrorMessage = 'Configuration failed: ${e.message}\nPlease check your Pool ID, Client ID, and Region.';
+      });
+    } on Exception catch (e) {
+      safePrint('An unknown error occurred configuring Amplify: $e');
+      setState(() {
+        _isAmplifyConfigured = true;
+        _configErrorMessage = 'An unexpected error occurred during configuration.';
+      });
     }
   }
 
@@ -83,6 +97,29 @@ class _AuthWrapperState extends State<AuthWrapper> {
       return const Scaffold(
         body: Center(
           child: CircularProgressIndicator(),
+        ),
+      );
+    }
+    
+    if (_configErrorMessage != null) {
+      return Scaffold(
+        backgroundColor: Colors.red.shade100,
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                const SizedBox(height: 16),
+                Text(
+                  _configErrorMessage!,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.red, fontSize: 18),
+                ),
+              ],
+            ),
+          ),
         ),
       );
     }

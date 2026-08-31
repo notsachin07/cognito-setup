@@ -16,7 +16,7 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
+  final _loginIdController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   String _errorMessage = '';
@@ -31,7 +31,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       final result = await AuthService.signIn(
-        _emailController.text.trim(),
+        _loginIdController.text.trim(),
         _passwordController.text.trim(),
       );
 
@@ -45,7 +45,7 @@ class _LoginScreenState extends State<LoginScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => ConfirmScreen(email: _emailController.text.trim()),
+            builder: (_) => ConfirmScreen(loginId: _loginIdController.text.trim()),
           ),
         );
       } else {
@@ -97,14 +97,14 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                   TextFormField(
-                    controller: _emailController,
+                    controller: _loginIdController,
                     decoration: const InputDecoration(
-                      labelText: 'Email',
+                      labelText: '__LOGIN_LABEL__',
                       border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.email),
+                      prefixIcon: Icon(__LOGIN_ICON__),
                     ),
-                    keyboardType: TextInputType.emailAddress,
-                    validator: (v) => v!.isEmpty ? 'Email is required' : null,
+                    keyboardType: __LOGIN_KEYBOARD__,
+                    validator: (v) => v!.isEmpty ? '__LOGIN_LABEL__ is required' : null,
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
@@ -125,7 +125,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           context,
                           MaterialPageRoute(
                             builder: (_) => ForgotPasswordScreen(
-                              initialEmail: _emailController.text.trim(),
+                              initialLoginId: _loginIdController.text.trim(),
                             ),
                           ),
                         );

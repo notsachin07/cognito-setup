@@ -11,14 +11,13 @@ class AuthService {
   }
 
   /// Sign up a new user
-  static Future<SignUpResult> signUp(String email, String password) async {
+  static Future<SignUpResult> signUp(String username, String password,
+      {Map<AuthUserAttributeKey, String>? userAttributes}) async {
     return await Amplify.Auth.signUp(
-      username: email,
+      username: username,
       password: password,
       options: SignUpOptions(
-        userAttributes: {
-          AuthUserAttributeKey.email: email,
-        },
+        userAttributes: userAttributes ?? {},
       ),
     );
   }
@@ -47,7 +46,7 @@ class AuthService {
   }
 
   /// Confirm new password with code
-  static Future<UpdatePasswordResult> confirmResetPassword(
+  static Future<ResetPasswordResult> confirmResetPassword(
       String email, String newPassword, String confirmationCode) async {
     return await Amplify.Auth.confirmResetPassword(
       username: email,

@@ -13,7 +13,7 @@ class SignupScreen extends StatefulWidget {
 
 class _SignupScreenState extends State<SignupScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
+  final _loginIdController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   String _errorMessage = '';
@@ -28,8 +28,9 @@ class _SignupScreenState extends State<SignupScreen> {
 
     try {
       final result = await AuthService.signUp(
-        _emailController.text.trim(),
+        _loginIdController.text.trim(),
         _passwordController.text.trim(),
+        // __SIGNUP_ATTRIBUTES__
       );
 
       if (result.isSignUpComplete) {
@@ -40,7 +41,7 @@ class _SignupScreenState extends State<SignupScreen> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (_) => ConfirmScreen(email: _emailController.text.trim()),
+            builder: (_) => ConfirmScreen(loginId: _loginIdController.text.trim()),
           ),
         );
       }
@@ -88,14 +89,14 @@ class _SignupScreenState extends State<SignupScreen> {
                       ),
                     ),
                   TextFormField(
-                    controller: _emailController,
+                    controller: _loginIdController,
                     decoration: const InputDecoration(
-                      labelText: 'Email',
+                      labelText: '__LOGIN_LABEL__',
                       border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.email),
+                      prefixIcon: Icon(__LOGIN_ICON__),
                     ),
-                    keyboardType: TextInputType.emailAddress,
-                    validator: (v) => v!.isEmpty ? 'Email is required' : null,
+                    keyboardType: __LOGIN_KEYBOARD__,
+                    validator: (v) => v!.isEmpty ? '__LOGIN_LABEL__ is required' : null,
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
@@ -112,6 +113,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       return null;
                     },
                   ),
+                  // __SIGNUP_FIELDS__
                   const SizedBox(height: 24),
                   ElevatedButton(
                     onPressed: _isLoading ? null : _handleSignup,

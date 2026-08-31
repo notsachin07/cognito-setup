@@ -47,6 +47,35 @@ if [ "$PROJECT_EXISTS" = false ]; then
     cd "$APP_NAME"
 fi
 
+echo ""
+echo "--- UI Configuration ---"
+echo "Select your primary login method:"
+echo "1) Email (Default)"
+echo "2) Username"
+echo "3) Phone Number"
+read -p "Enter choice (1/2/3) [1]: " LOGIN_CHOICE
+
+case $LOGIN_CHOICE in
+  2)
+    LOGIN_LABEL="Username"
+    LOGIN_ICON="Icons.person"
+    LOGIN_KEYBOARD="TextInputType.text"
+    ;;
+  3)
+    LOGIN_LABEL="Phone Number"
+    LOGIN_ICON="Icons.phone"
+    LOGIN_KEYBOARD="TextInputType.phone"
+    ;;
+  *)
+    LOGIN_LABEL="Email"
+    LOGIN_ICON="Icons.email"
+    LOGIN_KEYBOARD="TextInputType.emailAddress"
+    ;;
+esac
+
+echo ""
+read -p "Enter additional mandatory signup fields (comma separated, e.g. name,phone_number) []: " SIGNUP_FIELDS_INPUT
+
 echo "Adding Amplify dependencies..."
 flutter pub add amplify_flutter amplify_auth_cognito
 
@@ -106,6 +135,46 @@ else
         echo "  -> Downloading $FILE"
         curl -sL "$GITHUB_RAW_URL/$FILE" -o "lib/auth/$FILE"
     done
+fi
+
+# 2.5 Process UI files
+echo "Configuring Native UI Templates..."
+
+# Replace placeholders
+for FILE in lib/auth/*.dart; do
+    sed -i "s/__LOGIN_LABEL__/$LOGIN_LABEL/g" "$FILE"
+    sed -i "s/__LOGIN_ICON__/$LOGIN_ICON/g" "$FILE"
+    sed -i "s/__LOGIN_KEYBOARD__/$LOGIN_KEYBOARD/g" "$FILE"
+done
+
+# Generate dynamic signup fields
+if [ -n "$SIGNUP_FIELDS_INPUT" ]; then
+    CONTROLLERS=""
+    UI_FIELDS=""
+    ATTRIBUTES_MAP="userAttributes: {"
+    
+    IFS=',' read -ra ADDR <<< "$SIGNUP_FIELDS_INPUT"
+    for FIELD in "${ADDR[@]}"; do
+        FIELD=$(echo "$FIELD" | xargs)
+        if [ -z "$FIELD" ]; then continue; fi
+        
+        CTRL_NAME="_${FIELD}Controller"
+        LABEL=$(echo "$FIELD" | tr '_' ' ' | awk '{for(i=1;i<=NF;i++)sub(/./,toupper(substr($i,1,1)),$i)}1')
+        
+        CONTROLLERS="${CONTROLLERS}\n  final $CTRL_NAME = TextEditingController();"
+        
+        UI_FIELDS="${UI_FIELDS}\n                  TextFormField(\n                    controller: $CTRL_NAME,\n                    decoration: InputDecoration(labelText: '$LABEL', border: const OutlineInputBorder()),\n                    validator: (v) => v!.isEmpty ? '$LABEL is required' : null,\n                  ),\n                  const SizedBox(height: 16),"
+        
+        ATTRIBUTES_MAP="${ATTRIBUTES_MAP}\n          CognitoUserAttributeKey.parse('$FIELD'): $CTRL_NAME.text.trim(),"
+    done
+    ATTRIBUTES_MAP="${ATTRIBUTES_MAP}\n        }"
+
+    sed -i "/final _passwordController/a $CONTROLLERS" lib/auth/signup_screen.dart
+    sed -i "/\/\/ __SIGNUP_FIELDS__/a $UI_FIELDS" lib/auth/signup_screen.dart
+    sed -i "s/\/\/ __SIGNUP_ATTRIBUTES__/$ATTRIBUTES_MAP/" lib/auth/signup_screen.dart
+else
+    sed -i "s/\/\/ __SIGNUP_ATTRIBUTES__//" lib/auth/signup_screen.dart
+    sed -i "s/\/\/ __SIGNUP_FIELDS__//" lib/auth/signup_screen.dart
 fi
 
 # 3. Add INTERNET permission to AndroidManifest.xml

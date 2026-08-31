@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'auth_service.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
-  final String? initialEmail;
-  const ForgotPasswordScreen({super.key, this.initialEmail});
+  final String? initialLoginId;
+  const ForgotPasswordScreen({super.key, this.initialLoginId});
 
   @override
   State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
@@ -13,7 +13,7 @@ class ForgotPasswordScreen extends StatefulWidget {
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
+  final _loginIdController = TextEditingController();
   final _codeController = TextEditingController();
   final _newPasswordController = TextEditingController();
   
@@ -25,8 +25,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   @override
   void initState() {
     super.initState();
-    if (widget.initialEmail != null) {
-      _emailController.text = widget.initialEmail!;
+    if (widget.initialLoginId != null) {
+      _loginIdController.text = widget.initialLoginId!;
     }
   }
 
@@ -40,7 +40,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     });
 
     try {
-      final result = await AuthService.resetPassword(_emailController.text.trim());
+      final result = await AuthService.resetPassword(_loginIdController.text.trim());
       setState(() {
         _codeSent = result.isPasswordReset; // Wait, actually it's nextStep.updateStep
         _codeSent = true;
@@ -70,7 +70,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
     try {
       await AuthService.confirmResetPassword(
-        _emailController.text.trim(),
+        _loginIdController.text.trim(),
         _newPasswordController.text.trim(),
         _codeController.text.trim(),
       );
@@ -133,17 +133,17 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       ),
                     ),
                   
-                  // Step 1: Email
+                  // Step 1: Login ID
                   TextFormField(
-                    controller: _emailController,
+                    controller: _loginIdController,
                     enabled: !_codeSent,
                     decoration: const InputDecoration(
-                      labelText: 'Email',
+                      labelText: '__LOGIN_LABEL__',
                       border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.email),
+                      prefixIcon: Icon(__LOGIN_ICON__),
                     ),
-                    keyboardType: TextInputType.emailAddress,
-                    validator: (v) => v!.isEmpty ? 'Email is required' : null,
+                    keyboardType: __LOGIN_KEYBOARD__,
+                    validator: (v) => v!.isEmpty ? '__LOGIN_LABEL__ is required' : null,
                   ),
                   
                   // Step 2: Code and New Password

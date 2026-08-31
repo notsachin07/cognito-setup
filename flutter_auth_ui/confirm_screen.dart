@@ -5,8 +5,8 @@ import 'auth_service.dart';
 import 'auth_wrapper.dart';
 
 class ConfirmScreen extends StatefulWidget {
-  final String email;
-  const ConfirmScreen({super.key, required this.email});
+  final String loginId;
+  const ConfirmScreen({super.key, required this.loginId});
 
   @override
   State<ConfirmScreen> createState() => _ConfirmScreenState();
@@ -30,7 +30,7 @@ class _ConfirmScreenState extends State<ConfirmScreen> {
 
     try {
       final result = await AuthService.confirmSignUp(
-        widget.email,
+        widget.loginId,
         _codeController.text.trim(),
       );
 
@@ -57,7 +57,7 @@ class _ConfirmScreenState extends State<ConfirmScreen> {
 
   Future<void> _handleResendCode() async {
     try {
-      await AuthService.resendSignUpCode(widget.email);
+      await AuthService.resendSignUpCode(widget.loginId);
       setState(() {
         _successMessage = 'A new code was sent to your email.';
         _errorMessage = '';
@@ -92,7 +92,7 @@ class _ConfirmScreenState extends State<ConfirmScreen> {
                   const Icon(Icons.mark_email_read, size: 64, color: Colors.blue),
                   const SizedBox(height: 24),
                   Text(
-                    'We sent a 6-digit code to:\n${widget.email}',
+                    'We sent a 6-digit code to:\n${widget.loginId}',
                     textAlign: TextAlign.center,
                     style: const TextStyle(fontSize: 16),
                   ),
