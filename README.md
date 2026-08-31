@@ -7,11 +7,11 @@
     <img src="https://img.shields.io/badge/AWS-FF9900?style=for-the-badge&logo=amazon-aws&logoColor=white" />
 </p>
 
-In this branch of [`cognito-setup`](https://github.com/yonro/cognito-setup) repo I will setup [`Hosted Managed Login`](#key-features) for flutter application. Follow [`Managed_Login.md`](./Managed_Login.md) for detailed steps.  
+In this branch of [`cognito-setup`](https://github.com/notsachin07/cognito-setup) repo I will setup [`Hosted Managed Login`](#key-features) for flutter application. Follow [`Managed_Login.md`](./Managed_Login.md) for detailed steps.  
 
-To setup Native UI with Cognito switch to [`native-ui`](https://github.com/yonro/cognito-setup/tree/native-ui) branch.   
+To setup Native UI with Cognito switch to [`native-ui`](https://github.com/notsachin07/cognito-setup/tree/native-ui) branch.   
 
-To setup Web Application with Cognito switch to [`website`](https://github.com/yonro/cognito-setup/tree/website) branch.
+To setup Web Application with Cognito switch to [`website`](https://github.com/notsachin07/cognito-setup/tree/website) branch.
 </div>
 
 For basic understading of Cognito and it features refer to [AWS Cognito Documentation](https://docs.aws.amazon.com/cognito/)
