@@ -194,7 +194,7 @@ done
 # Generate dynamic signup fields
 if [ -n "$SIGNUP_FIELDS_INPUT" ]; then
     > .tmp_controllers
-    > .tmp_ui_fields
+    echo "                  const SizedBox(height: 16)," > .tmp_ui_fields
     echo "        userAttributes: {" > .tmp_attrs
     
     IFS=',' read -ra ADDR <<< "$SIGNUP_FIELDS_INPUT"
